@@ -2,7 +2,7 @@
 
 A comprehensive biometric attendance tracking solution using ESP32-S3, a fingerprint sensor, and Google Sheets integration.
 
-![Fingerprint Attendance System](https://via.placeholder.com/800x400?text=Fingerprint+Attendance+System)
+![Fingerprint Attendance System](assets/image.png)
 
 ## Overview
 
