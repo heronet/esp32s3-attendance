@@ -59,7 +59,7 @@ void CharacteristicCallbacks::onWrite(BLECharacteristic *pCharacteristic)
 void setupBLE()
 {
     // Initialize BLE device
-    BLEDevice::init("ESP32S3-Attendance");
+    BLEDevice::init("ESP32-S3-Attendance");
 
     // Create the BLE Server
     pServer = BLEDevice::createServer();
