@@ -13,8 +13,10 @@
 #include <BLE2902.h>
 
 // WiFi credentials
-const char *ssid = "Sony Xperia 1 III";
-const char *password = "00000000";
+const char *wifiConfigFile = "/wifi_config.txt";
+
+String storedSSID = "";
+String storedPassword = "";
 
 // Google Script Deployment ID
 const char *GScriptId = "AKfycby_2izhGidfcOPhpAfs7zhAWXHcK7oeZnUniauozbuc9rR52E7b_BaRJW4IgwTPPsz_rQ";
@@ -293,6 +295,85 @@ void saveAttendanceToFile(String studentId)
   printBoth("Saved attendance record to file: " + record);
 }
 
+// New function to load WiFi credentials from SPIFFS
+void loadWiFiCredentials()
+{
+  if (SPIFFS.exists(wifiConfigFile))
+  {
+    File file = SPIFFS.open(wifiConfigFile, FILE_READ);
+    if (file)
+    {
+      String ssidFromFile = file.readStringUntil('\n');
+      String passwordFromFile = file.readStringUntil('\n');
+
+      // Trim any newlines or whitespace
+      ssidFromFile.trim();
+      passwordFromFile.trim();
+
+      // Only update if not empty
+      if (ssidFromFile.length() > 0)
+      {
+        storedSSID = ssidFromFile;
+      }
+      if (passwordFromFile.length() > 0)
+      {
+        storedPassword = passwordFromFile;
+      }
+
+      file.close();
+      printBoth("WiFi credentials loaded: " + storedSSID);
+    }
+  }
+  else
+  {
+    printBoth("No saved WiFi credentials found");
+  }
+}
+
+// New function to save WiFi credentials to SPIFFS
+void saveWiFiCredentials(const String &newSSID, const String &newPassword)
+{
+  File file = SPIFFS.open(wifiConfigFile, FILE_WRITE);
+  if (file)
+  {
+    file.println(newSSID);
+    file.println(newPassword);
+    file.close();
+    printBoth("WiFi credentials saved successfully");
+  }
+  else
+  {
+    printBoth("Failed to save WiFi credentials");
+  }
+}
+
+// New function to update WiFi settings
+void updateWiFiSettings()
+{
+  printBoth("Current SSID: " + storedSSID);
+  printBoth("Enter new SSID (or leave empty to keep current):");
+
+  String newSSID = readInput();
+  if (newSSID.length() > 0)
+  {
+    printBoth("Enter password for " + newSSID + ":");
+    String newPassword = readInput();
+
+    // Update stored variables
+    storedSSID = newSSID;
+    storedPassword = newPassword;
+
+    // Save to file
+    saveWiFiCredentials(storedSSID, storedPassword);
+    printBoth("WiFi settings updated");
+  }
+  else
+  {
+    printBoth("SSID unchanged");
+  }
+}
+
+// Modified connectToWiFi function
 void connectToWiFi()
 {
   if (WiFi.status() == WL_CONNECTED)
@@ -301,9 +382,19 @@ void connectToWiFi()
     return;
   }
 
-  printBoth("Connecting to " + String(ssid) + " ...");
+  // Load saved credentials only when needed
+  loadWiFiCredentials();
 
-  WiFi.begin(ssid, password);
+  // If no credentials are available, prompt user
+  if (storedSSID.length() == 0)
+  {
+    printBoth("No WiFi credentials found. Please set them now:");
+    updateWiFiSettings();
+  }
+
+  printBoth("Connecting to " + storedSSID + " ...");
+
+  WiFi.begin(storedSSID.c_str(), storedPassword.c_str());
 
   int wifiCounter = 0;
   while (WiFi.status() != WL_CONNECTED && wifiCounter < 20) // Timeout after 20 seconds
@@ -320,7 +411,32 @@ void connectToWiFi()
   }
   else
   {
-    printBoth("\nWiFi connection failed! Cannot sync to Google Sheets.");
+    printBoth("\nWiFi connection failed! Do you want to update WiFi settings? (Y/N)");
+    String response = readInput();
+    if (response == "Y" || response == "y")
+    {
+      updateWiFiSettings();
+      // Try connecting once more with new settings
+      printBoth("Trying again with new settings...");
+      WiFi.begin(storedSSID.c_str(), storedPassword.c_str());
+      wifiCounter = 0;
+      while (WiFi.status() != WL_CONNECTED && wifiCounter < 20)
+      {
+        delay(1000);
+        printBoth(".");
+        wifiCounter++;
+      }
+
+      if (WiFi.status() == WL_CONNECTED)
+      {
+        printBoth("\nConnection established!");
+        printBoth("IP address: " + WiFi.localIP().toString());
+      }
+      else
+      {
+        printBoth("\nWiFi connection still failed. Cannot sync to Google Sheets.");
+      }
+    }
   }
 }
 
@@ -1086,6 +1202,8 @@ void showMainMenu()
   printBoth("5. Sync to Google Sheets");
   printBoth("6. Clear Attendance Data");
   printBoth("7. Set Current Date");
+  printBoth("8. Update WiFi Settings");
+  printBoth("9. Show Menu (Help)");
   printBoth("==============================");
 }
 
@@ -1145,6 +1263,16 @@ void loop()
     else if (mode == "7")
     {
       setCurrentDate();
+      showMainMenu();
+    }
+    else if (mode == "8")
+    {
+      updateWiFiSettings();
+      showMainMenu();
+    }
+    else if (mode == "9" || mode == "?" || mode.equalsIgnoreCase("help"))
+    {
+      // Allow multiple inputs to trigger the help menu
       showMainMenu();
     }
     else
