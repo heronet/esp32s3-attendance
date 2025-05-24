@@ -99,6 +99,8 @@ This project implements a portable biometric attendance system that allows track
 5. **Sync to Google Sheets**: Upload attendance data to Google Sheets
 6. **Clear Attendance Data**: Erase all attendance records
 7. **Set Current Date**: Change the date for attendance recording
+8. **Update WiFi Settings**: Add or Update Wi-Fi SSID and password
+9. **Show Menu (Help)**: Re-display the main menu
 
 ### BLE Control
 
