@@ -1,8 +1,8 @@
 #ifndef FINGERPRINT_H
 #define FINGERPRINT_H
 
-#include <Arduino.h>
 #include <Adafruit_Fingerprint.h>
+#include <Arduino.h>
 #include <HardwareSerial.h>
 
 extern Adafruit_Fingerprint finger;
@@ -16,6 +16,7 @@ void enrollFingerprint();
 void enrollMode();
 void attendanceMode();
 void clearAllFingerprints();
+void showFingerprintCount();
 uint8_t readnumber();
 
-#endif // FINGERPRINT_H
+#endif  // FINGERPRINT_H
